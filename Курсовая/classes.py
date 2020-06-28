@@ -35,7 +35,7 @@ connections.connect_database("polyclinic")
 connections.connect_coll("registrator")
 abr = connections.coll_connector
 for login in abr.find({"login": "dron", "password": "1234"}):
-    print("ok")
+    pass
 
 
 class Connect_SQLite:
@@ -142,26 +142,98 @@ class Registrator:
                     ):
                         array_time.append(time_poisk["time"])
                         # array_time.sort(key = lambda date: datetime.strptime(date, '%H'))
-                        while ccc < len(array_time):
-                            for zapis in connections.coll_connector.find(
-                                {
-                                    "date": {"$gt": start, "$lt": end},
-                                    "doctor_id": array_doc_id[id_],
-                                    "time": array_time[ccc],
-                                }
-                            ):
-                                array_zapis_fio.append(zapis["patient_name"])  # ФИО
-                                array_zapis_worry.append(
-                                    zapis["patient_info"]
-                                )  # Беспокойства
-                            ccc += 1
                     iii += 1
-                    raspis_doc()
                     break
                 break
             elif var.get() == 0:
                 messagebox.showinfo("Ошибка", "Выберите врача!")
-                break
+        print(array_time)
+        array_time.sort()
+        print(array_time)
+        ccc = 0
+        while ccc < len(array_time):
+            for zapis in connections.coll_connector.find(
+                {
+                    "date": {"$gt": start, "$lt": end},
+                    "doctor_id": array_doc_id[id_],
+                    "time": array_time[ccc],
+                }
+            ):
+                array_zapis_fio.append(zapis["patient_name"])  # ФИО
+                array_zapis_worry.append(zapis["patient_info"])  # Беспокойства
+            ccc += 1
+        raspis_doc()
+
+    @staticmethod
+    def raspis_doc_window():
+        i = 0
+        entr_place = 0
+        lbl_place = 0
+        worry_place = 0
+        if len(array_zapis_fio) == 0:
+            print("yaya")
+            label_dont = Label(
+                doctor_main, text="Записей нет!", background="#FFAAA8", font="times 12",
+            )
+            label_dont.place(x=300, y=250)
+        else:
+            while i < len(array_zapis_fio):
+                time1 = Label(
+                    doctor_main,
+                    text=array_time[i],
+                    background="#FFAAA8",
+                    font="times 12",
+                )
+                time1.place(x=1, y=40 + lbl_place)
+                lbl_name = Entry(doctor_main, font=("Arial", 10, "bold"))
+                lbl_name.insert(END, array_zapis_fio[i])
+                lbl_name.place(x=80, y=40 + entr_place)
+                lbl_worry = Entry(doctor_main, font=("Arial", 10, "bold"))
+                lbl_worry.insert(END, array_zapis_worry[i])
+                lbl_worry.place(x=80, y=60 + worry_place)
+                btn_prishel = Button(text="Пришел", command="")
+                btn_prishel.place(x=)
+                worry_place += 50
+                entr_place += 50
+                lbl_place += 50
+                i += 1
+
+    @staticmethod
+    def main_reg_window():
+        global array_doc_id, array_doc
+        connections = Connect_MongoDB(
+            "mongodb://dron2026:55555@dron2026-shard-00-00-x59g6.mongodb.net:27017,dron2026-shard-00-01-x59g6.mongodb.net:27017,dron2026-shard-00-02-x59g6.mongodb.net:27017/test?ssl=true&replicaSet=dron2026-shard-0&authSource=admin&retryWrites=true&w=majority"
+        )
+        connections.connect_database("polyclinic")
+        connections.connect_coll("app_doctor")
+        btn1 = Button(
+            text="Перейти к расписанию", command=lambda: choose_class(), font="times 10"
+        )  # Кнопка 'Перейти к расписанию'
+        i = 0
+        radio_place = 0
+        btn_place = 0
+        vari = 0
+        # Массивы
+        array_doc_id = []
+        array_doc = []
+        array_var = []
+        for doc in connections.coll_connector.find({}):
+            array_doc.append(doc["specialization"])
+            array_doc_id.append(doc["id"])
+            while i < len(array_doc):
+                radio = Radiobutton(
+                    text=array_doc[i] + "(" + doc["name"] + ")",
+                    variable=var,
+                    value=1 + i,
+                    background="#FFAAA8",
+                    font="times 10",
+                )
+                radio.place(x=1, y=1 + radio_place)
+                btn1.place(x=1, y=110 + btn_place)
+                array_var.append(var.get())
+                i += 1
+                radio_place += 24
+                btn_place += 5
 
 
 def raspis_doc():
@@ -177,48 +249,17 @@ def raspis_doc():
     date = Label(
         doctor_main, text=time_now_doc, background="#FFAAA8", font="times 12"
     )  # Запись в лейбл сегодняшней даты
-    # for array_doc[doctor]:
-    # time1 = Label(doc, text="9:00", background="#FFAAA8", font="times 12")
-    # time1.place(x=1, y=40)
-    i = 0
-    entr_place = 0
-    lbl_place = 0
-    while i < len(array_zapis_fio):
-        time1 = Label(
-            doctor_main, text=array_time[i], background="#FFAAA8", font="times 12",
-        )
-        time1.place(x=1, y=40 + lbl_place)
-        a1 = Entry(doctor_main, font=("Arial", 10, "bold"))
-        a1.insert(END,array_zapis_fio[i])
-        a1.place(x=80, y=30 + entr_place)
-        entr_place += 40
-        lbl_place += 50
-        i += 1
-        print(array_time)
-        print("fio" + str(array_zapis_fio))
-        print("worry" + str(array_zapis_worry))
-    else:
-        print("yaya")
-        label_dont = Label(
-            doctor_main, text="Записей нет!", background="#FFAAA8", font="times 12",
-        )
-        label_dont.place(x=300, y=250)
-        
-
+    window_main = Registrator()
+    window_main.raspis_doc_window()
+    # print(array_time)
+    print("fio" + str(array_zapis_fio))
+    print("worry" + str(array_zapis_worry))
     date.place(x=100, y=1)
     doctor_main.mainloop()
 
-    def lable_time():
-        None
-
 
 def main_reg():
-    global array_doc_id, var, array_doc, root1
-    connections = Connect_MongoDB(
-        "mongodb://dron2026:55555@dron2026-shard-00-00-x59g6.mongodb.net:27017,dron2026-shard-00-01-x59g6.mongodb.net:27017,dron2026-shard-00-02-x59g6.mongodb.net:27017/test?ssl=true&replicaSet=dron2026-shard-0&authSource=admin&retryWrites=true&w=majority"
-    )
-    connections.connect_database("polyclinic")
-    connections.connect_coll("app_doctor")
+    global var, root1
     root1 = Tk()
     var = IntVar()  # Объявление переменной для переключаталей
     var.set(0)  # Изначально 0 = выкл
@@ -227,36 +268,8 @@ def main_reg():
     root1.config(background="#FFAAA8")  # Цвет фона окна
     var = IntVar()  # Объявление переменной для переключаталей
     var.set(0)  # Изначально 0 = выкл
-    btn1 = Button(
-        text="Перейти к расписанию", command=lambda: choose_class(), font="times 10"
-    )  # Кнопка 'Перейти к расписанию'
-    # Переменные
-    i = 0
-    radio_place = 0
-    btn_place = 0
-    vari = 0
-    # Массивы
-    array_doc_id = []
-    array_doc = []
-    array_var = []
-    for doc in connections.coll_connector.find({}):
-        array_doc.append(doc["specialization"])
-        array_doc_id.append(doc["id"])
-        while i < len(array_doc):
-            radio = Radiobutton(
-                text=array_doc[i] + "(" + doc["name"] + ")",
-                variable=var,
-                value=1 + i,
-                background="#FFAAA8",
-                font="times 10",
-            )
-            radio.place(x=1, y=1 + radio_place)
-            btn1.place(x=1, y=110 + btn_place)
-            array_var.append(var.get())
-            i += 1
-            radio_place += 24
-            btn_place += 5
-
+    window_main_reg = Registrator()
+    window_main_reg.main_reg_window()
     root1.mainloop()
 
 
@@ -264,11 +277,6 @@ def choose_class():
     ch_class = Registrator()
     ch_class.choose()
     print(ch_class)
-
-
-##    print(array_var)
-##    print(array_doc_id)
-
 
 def main():
     global enter_login, enter_password, root
