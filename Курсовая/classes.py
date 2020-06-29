@@ -746,6 +746,9 @@ class Doctors(Registrator, Auth):
 
     @staticmethod
     def spend(id_button):
+        global list_cb, abc, array_provesti, search_patient
+        array_provesti = []
+        doctor_main_window.destroy()
         spend_main_window = Tk()
         spend_main_window.geometry("825x600")  # Размер окна
         spend_main_window.title("Записи услуг")  # Название окна
@@ -763,13 +766,23 @@ class Doctors(Registrator, Auth):
             cursor.execute(sql, [(str(search_patient["doctor_id"]))])
             abc = cursor.fetchall()
         plus = 0
-        while pr<len(abc):
-            c1 = Checkbutton(spend_main_window, text=abc[pr], variable=cvar1, onvalue=1+pr, offvalue=0, background="#FFAAA8", font="times 12")
-            c1.place(x=1, y=30+plus)
-            print(len(abc))
-            plus+= 30
-            pr+=1
-        btn_ok = Button(spend_main_window, text="Провести", command="",font="times 14")
+        list_cb = []
+        kek = ""
+        for pr in range(len(abc)):
+            list_cb.append(IntVar())
+            list_cb[-1].set(0)
+            c1 = Checkbutton(
+                text=abc[pr],
+                variable=list_cb[-1],
+                background="#FFAAA8",
+                font="times 12",
+                command=lambda pr=pr: Doctors.provesti_pat(pr),
+                onvalue=1,
+                offvalue=0
+            )
+            c1.place(x=1,y=30+plus)
+            plus += 30
+        btn_ok = Button(spend_main_window, text="Провести", command=lambda: Doctors.spend_trans(),font="times 14")
         btn_ok.place(x=1,y=140+plus)
         lbl_com = Label(spend_main_window,text="Комметарий:", background="#FFAAA8", font="times 14")
         lbl_com.place(x=1,y=60+plus)
@@ -781,6 +794,24 @@ class Doctors(Registrator, Auth):
         lbl_patient_name.place(x=1, y=570)
         spend_main_window.mainloop()
 
+    @staticmethod
+    def provesti_pat(pr):
+        global array_provesti
+        if list_cb[pr].get() == 1:
+            array_provesti.append(abc[pr])
+        else:
+            array_provesti.remove(abc[pr])
+    @staticmethod
+    def spend_trans():
+        connections.connect_coll("patient")
+        print(search_patient["patient_name"])
+        patient_info = {"doctor_id": search_patient["doctor_id"], "patient_name": search_patient["patient_name"],
+                         "patient_info": search_patient["patient_info"],
+                        "date": search_patient["date"], "time": search_patient["time"],
+                         "polis": search_patient["polis"], "service": array_provesti, "comment": "sddasdas",
+                         "doc_name": name, "doc_spec": specialization}
+        connections.connect_coll.insert_one(patient_info)
+        print(array_provesti)
 
 if __name__ == "__main__":
     # Registrator.main_reg()
