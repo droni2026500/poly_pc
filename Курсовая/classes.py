@@ -324,12 +324,16 @@ class Registrator:
     @staticmethod
     def print_check():
         array_work=[]
+        array_price=[]
         i=0
         while i < (len(patinet_informations["service"])):
-            array_work.append(patinet_informations["price"][i][0])
-            price = patinet_informations["price"][i][0]
-            context = {'doctor': patinet_informations["doc_name"], 'rabota'+str(i): array_work[i],'rabota1':array_work[i],'price': price, 'summ': "",
-                       'itogo': ""}
+            array_work.append(patinet_informations["service"][i][0])
+            array_price.append(patinet_informations["service"][i][1])
+            price = patinet_informations["service"][i][0]
+            print(array_work[i])
+            print(price)
+            context = {'doctor': patinet_informations["doc_name"], 'rabota':array_work[i],'price': array_price[i], 'summ': array_price[i],
+                       'itogo': array_price[i]}
             doc = DocxTemplate("Чек.docx")
             doc.render(context)
             doc.save("чек_покупка.docx")
