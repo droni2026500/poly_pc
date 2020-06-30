@@ -4,7 +4,8 @@ import pymongo
 import sqlite3
 import platform
 import datetime
-
+from docxtpl import DocxTemplate
+from tkcalendar import Calendar
 try:
     import tkinter as tk
     from tkinter import ttk
@@ -12,8 +13,6 @@ except ImportError:
     import Tkinter as tk
     import ttk
 
-
-from tkcalendar import Calendar, DateEntry
 
 
 time = datetime.datetime.now()
@@ -64,25 +63,24 @@ class Auth(Connect_MongoDB, Connect_SQLite):
     @staticmethod
     def main():
         global enter_login, enter_password, root
-        # Окно авторизации
-        root = Tk()  # Создание окна
-        root.geometry("300x250")  # Размер окна
-        root.title("Войти в систему")  # Название окна
-        root.config(background="#fff44f")  # Фон формы
+        root = Tk()
+        root.geometry("300x250")
+        root.title("Войти в систему")
+        root.config(background="#fff44f")
         root.resizable(
             width=False, height=False
-        )  # Настройка,чтобы нельзя было изменять размер окна
+        )
         text_log = Label(
             text="Вход в систему", background="#fff44f", font="times 12"
-        )  # Лейбл 'ход в систему'
+        )
         text_enter_login = Label(
             text="Введите ваш логин:", background="#fff44f", font="times 12"
-        )  # Лейбл введите логин
-        enter_login = Entry()  # Поле ввода логина
+        )
+        enter_login = Entry()
         text_enter_pass = Label(
             text="Введите ваш пароль:", background="#fff44f", font="times 12"
-        )  # Лейбл "Введите ваш пароль"
-        enter_password = Entry(show="*")  # Поле ввода пароля
+        )
+        enter_password = Entry(show="*")
         button_enter = Button(
             text="Войти",
             command=lambda: Auth(
@@ -91,8 +89,7 @@ class Auth(Connect_MongoDB, Connect_SQLite):
             background="#71bc78",
             foreground="white",
             font="times 12",
-        )  # Кнопка входа
-        # Расположение элементов на форме
+        )
         text_log.pack()
         text_enter_login.pack()
         enter_login.pack()
@@ -107,40 +104,90 @@ class Auth(Connect_MongoDB, Connect_SQLite):
         for log in connections.coll_connector.find(
             {"login": self.log, "password": self.pas}
         ):
-            # Если все верно и специализация врача равна регистратору,то...
             if log["specialization"] == "Регистратор":
                 specialization = log["specialization"]
                 name = log["name"]
                 params = (name, specialization, time_now, system)
-                # Вставляем данные в таблицу
                 cursor.execute("INSERT INTO staff_session VALUES (?,?,?,?)", params)
                 connection_SQL.commit()
                 root.destroy()
                 Registrator.main_reg()
             else:
-                # Если данные введены не правильно=ошибка
-                messagebox.showinfo("ошибка", "Попопробуйте еще раз!")
+                messagebox.showerror("Ошибка", "Попопробуйте еще раз!")
             break
         else:
-            self.log = "droni2026500"
-            self.pas = "124"
             connections.connect_coll("app_doctor")
             for log in connections.coll_connector.find(
                 {"login": self.log, "password": self.pas}
             ):
-                print("ok")
                 specialization = log["specialization"]
                 name = log["name"]
                 id_docs = log["id"]
                 params = (name, specialization, time_now, system)
-                # Вставляем данные в таблицу
                 cursor.execute("INSERT INTO staff_session VALUES (?,?,?,?)", params)
                 connection_SQL.commit()
                 root.destroy()
                 Doctors.doctors_main()
                 break
             else:
-                messagebox.showinfo("ошибка", "Попопробуйте еще раз!")
+                connections.connect_coll("auth_user")
+                for log in connections.coll_connector.find(
+                        {"username": self.log, "password": self.pas}
+                ):
+                    root.destroy()
+                    Admin.main_admin_window()
+                    break
+                else:
+                    messagebox.showerror("Ошибка", "Попопробуйте еще раз!")
+
+
+class Admin:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def main_admin_window():
+        root_admin = Tk()
+        root_admin.geometry("500x400")
+        root_admin.title("Окно администратора")
+        btn_add_registrator=Button(root_admin,text="Добавить регистратора",command=lambda:Admin.add_reg(),font="times12")
+        btn_add_registrator.place(x=1, y=1)
+        root_admin.config(background="#FFAAA8")
+        root_admin.mainloop()
+
+    @staticmethod
+    def add_reg():
+        global entry_name_reg,entry_login_reg,entry_password_reg,root_add_reg
+        root_add_reg = Tk()
+        root_add_reg.geometry("300x300")
+        root_add_reg.title("Окно добавления регистратора")
+        lbl_name_reg=Label(root_add_reg,text="ФИО:",background="#FFAAA8", font="times 14",)
+        lbl_name_reg.place(x=1,y=1)
+        entry_name_reg=Entry(root_add_reg)
+        entry_name_reg.place(x=70,y=5)
+        lbl_login_reg=Label(root_add_reg,text="Логин:",background="#FFAAA8", font="times 14",)
+        lbl_login_reg.place(x=1,y=50)
+        entry_login_reg = Entry(root_add_reg)
+        entry_login_reg.place(x=70,y=55)
+        lbl_password_reg = Label(root_add_reg,text="Пароль:", background="#FFAAA8", font="times 14", )
+        lbl_password_reg.place(x=1, y=100)
+        entry_password_reg = Entry(root_add_reg)
+        entry_password_reg.place(x=70,y=105)
+        btn_add_= Button(root_add_reg,text="Добавить регистратора", command=lambda: Admin.add_reg_check(), font="times12")
+        btn_add_.place(x=1,y=150)
+        root_add_reg.config(background="#FFAAA8")
+        root_add_reg.mainloop()
+
+    @staticmethod
+    def add_reg_check():
+        if entry_name_reg.get() == "" or entry_login_reg.get() =="" or entry_password_reg.get() == "":
+            messagebox.showerror("Ошибка", "Заолните все поля!")
+        else:
+            connections.connect_coll("registrator")
+            registrator_content={"name":entry_name_reg.get(),"login":entry_login_reg.get(),"password":entry_password_reg.get(),"specialization":"Регистратор"}
+            connections.coll_connector.insert_one(registrator_content)
+            messagebox.showinfo("Успешно", "Регистратор добавлен")
+            root_add_reg.destroy()
 
 
 class Registrator:
@@ -151,22 +198,27 @@ class Registrator:
     def main_reg():
         global var, root1
         root1 = Tk()
-        root1.geometry("700x400")  # Размер окна
-        root1.title("Окно регистратора")  # Название окна
-        root1.config(background="#FFAAA8")  # Цвет фона окна
-        var = IntVar()  # Объявление переменной для переключаталей
-        var.set(0)  # Изначально 0 = выкл
+        root1.geometry("700x400")
+        root1.title("Окно регистратора")
+        root1.config(background="#FFAAA8")
+        var = IntVar()
+        var.set(0)
         window_main_reg = Registrator()
         window_main_reg.main_reg_window()
         root1.mainloop()
 
     @staticmethod
     def choose():
-        global doctor, id_, array_zapis_fio, array_zapis_worry, array_time
+        global doctor, id_, array_zapis_fio, array_zapis_worry, array_time,sortedArray1, array_zapis_id
         id_ = -1
         doctor = -1
+        try:
+            if first_date_date == "":
+                ""
+        except NameError:
+            messagebox.showerror("Ошибка", "Выберите дату")
         if var.get() == 0:
-            messagebox.showinfo("Ошибка", "Выберите врача!")
+            messagebox.showerror("Ошибка", "Выберите врача!")
         else:
             while id_ < (len(array_doc_id)):
                 id_ += 1
@@ -175,12 +227,12 @@ class Registrator:
                     array_doc[doctor]
                     array_zapis_fio = []
                     array_zapis_worry = []
+                    array_zapis_id=[]
                     array_time = []
-                    end = datetime.datetime.today()  # конечное время сегодня
+                    end = datetime.datetime.today()
                     start = datetime.datetime.today() + datetime.timedelta(
                         days=-1
-                    )  # начальное время сегодня(-1 день)
-                    # print(start)
+                    )
                     connections.connect_coll("app_reception")
                     iii = 0
                     while iii < len(array_doc[doctor]):
@@ -191,29 +243,31 @@ class Registrator:
                             }
                         ):
                             array_time.append(time_poisk["time"])
-                            # array_time.sort(key = lambda date: datetime.strptime(date, '%H'))
                         iii += 1
                         break
                     break
-            print(array_time)
-            array_time.sort()
-            print(array_time)
+            sortedArray1 = sorted(
+                array_time, key=lambda x: datetime.datetime.strptime(x, "%H:%M")
+            )
             ccc = 0
-            while ccc < len(array_time):
+            while ccc < len(sortedArray1):
                 for zapis in connections.coll_connector.find(
                     {
                         "date": {"$gt": start, "$lt": end},
                         "doctor_id": array_doc_id[id_],
-                        "time": array_time[ccc],
+                        "time": sortedArray1[ccc],
                     }
                 ):
-                    array_zapis_fio.append(zapis["patient_name"])  # ФИО
-                    array_zapis_worry.append(zapis["patient_info"])  # Беспокойства
+                    array_zapis_fio.append(zapis["patient_name"])
+                    array_zapis_worry.append(zapis["patient_info"])
+                    array_zapis_id.append(zapis["id"])
                 ccc += 1
             Registrator.raspis_doc()
 
+
     @staticmethod
     def raspis_doc_window():
+        global patinet_informations
         i = 0
         entr_place = 0
         lbl_place = 0
@@ -222,45 +276,78 @@ class Registrator:
             label_dont = Label(
                 doctor_main, text="Записей нет!", background="#FFAAA8", font="times 14",
             )
-            label_dont.place(x=250, y=250)
+            label_dont.place(x=400, y=370)
         else:
+            lbl_fio_pat = Label(
+                doctor_main, text="ФИО пациента", background="#FFAAA8", font="times 12",
+            )
+            lbl_worry_pat = Label(
+                doctor_main, text="Беспокойства", background="#FFAAA8", font="times 12",
+            )
+            lbl_fio_pat.place(x=100, y=20)
+            lbl_worry_pat.place(x=400, y=20)
             while i < len(array_zapis_fio):
+                connections.connect_coll("patient")
+                for patinet_informations in connections.coll_connector.find(
+                        {"patient_id": array_zapis_id[i],"id_check":"1"}
+                ):
+                    btn_chek_reg=Button(doctor_main,text="Распечатать чек",command=lambda:Registrator.print_check(),font="times 12")
+                    btn_chek_reg.place(x=650, y=55+entr_place)
                 time1 = Label(
                     doctor_main,
-                    text=array_time[i],
+                    text=sortedArray1[i],
                     background="#FFAAA8",
                     font="times 14",
                 )
-                time1.place(x=1, y=40 + lbl_place)
-                lbl_name = Entry(doctor_main, font="times 14")
+                time1.place(x=1, y=55 + lbl_place)
+                lbl_name = Entry(doctor_main, font="times 12")
                 lbl_name.insert(END, array_zapis_fio[i])
-                lbl_name.place(x=80, y=40 + entr_place)
-                lbl_worry = Entry(doctor_main, font="times 14")
+                lbl_name.configure(
+                         disabledbackground="white",
+                         state=DISABLED,
+                         disabledforeground="black",
+                         width=30,)
+                lbl_name.place(x=80, y=60 + entr_place)
+                lbl_worry = Entry(doctor_main, font="times 12")
                 lbl_worry.insert(END, array_zapis_worry[i])
-                lbl_worry.place(x=80, y=60 + worry_place)
+                lbl_worry.configure(
+                    disabledbackground="white",
+                    state=DISABLED,
+                    disabledforeground="black",
+                    width=30, )
+                lbl_worry.place(x=350, y=60 + worry_place)
                 worry_place += 50
                 entr_place += 50
                 lbl_place += 50
                 i += 1
 
     @staticmethod
+    def print_check():
+        array_work=[]
+        i=0
+        while i < (len(patinet_informations["service"])):
+            array_work.append(patinet_informations["price"][i][0])
+            price = patinet_informations["price"][i][0]
+            context = {'doctor': patinet_informations["doc_name"], 'rabota'+str(i): array_work[i],'rabota1':array_work[i],'price': price, 'summ': "",
+                       'itogo': ""}
+            doc = DocxTemplate("Чек.docx")
+            doc.render(context)
+            doc.save("чек_покупка.docx")
+            i += 1
+        print(context)
+        # doc = DocxTemplate("Чек.docx")
+        # doc.render(context)
+        # doc.save("чек_покупка.docx")
+        messagebox.showinfo("Успешно", "Заберите чек")
+
+    @staticmethod
     def main_reg_window():
-        global array_doc_id, array_doc
+        global array_doc_id, array_doc,doc
         connections.connect_coll("app_doctor")
         btn1 = Button(
             text="Перейти к расписанию",
             command=lambda: Registrator.choose(),
             font="times 12",
-        )  # Кнопка 'Перейти к расписанию'
-        lbl_1 = Label(
-            text="------------------------------------------------------------------------------------------------------------",
-            background="#FFAAA8",
-            font="times 14",
-        )
-        lbl_2 = Label(
-            text="------------------------------------------------------------------------------------------------------------",
-            background="#FFAAA8",
-            font="times 14",
         )
         btn2 = Button(
             text="Редактирование услуг врача",
@@ -277,20 +364,14 @@ class Registrator:
             command=lambda: Registrator.date_entry_main(),
             font="times 12",
         )
-        btn5 = Button(
-            text="Отчет посещений за день",
-            command=lambda: Registrator.date_entry_main(),
-            font="times 12",
-        )
         btn6 = Button(
-            text="Отчет заработка за период",
-            command=lambda: Registrator.date_entry_main(),
+            text="Отчет за период",
+            command=lambda: Registrator.period_main(),
             font="times 12",
         )
         i = 0
         radio_place = 0
         btn_place = 0
-        # Массивы
         array_doc_id = []
         array_doc = []
         array_var = []
@@ -303,30 +384,148 @@ class Registrator:
                     variable=var,
                     value=1 + i,
                     background="#FFAAA8",
-                    font="times 10",
+                    font="times 14",
                 )
                 radio.place(x=1, y=1 + radio_place)
-                btn1.place(x=1, y=110 + btn_place)
-                lbl_1.place(x=1, y=135 + btn_place)
-                lbl_2.place(x=1, y=180 + btn_place)
-                btn2.place(x=1, y=155 + btn_place)
-                btn3.place(x=1, y=200 + btn_place)
-                btn4.place(x=350, y=10)
-                btn5.place(x=1, y=250 + btn_place)
-                btn6.place(x=1, y=300 + btn_place)
+                btn1.place(x=1, y=120 + btn_place)
+                btn2.place(x=1, y=170 + btn_place)
+                btn3.place(x=1, y=220 + btn_place)
+                btn4.place(x=480, y=10)
+                btn6.place(x=1, y=270 + btn_place)
                 array_var.append(var.get())
                 i += 1
-                radio_place += 24
+                radio_place += 30
                 btn_place += 10
 
     @staticmethod
+    def period_main():
+        time1 = datetime.datetime.today()
+        time_now1 = time1.strftime("%H:%M:%S.%f")
+        print(time_now1)
+        root_date = Tk()
+        root_date.geometry("825x650")
+        root_date.title("Отчет по обменам")
+        root_date.config(background="#FFAAA8")
+        root_date.resizable(width=False, height=False)
+        lbl_poisk = Label(root_date, text="Выберите даты:", background="#FFAAA8",font="times14")
+        btn1 = Button(root_date, text="Первая дата", command=lambda: search1(),font="times12")
+        btn2 = Button(root_date, text="Вторая дата", command=lambda: search2(),font="times12")
+        btn_poisk = Button(root_date, text="Поиск", command=lambda: search(),font="times12")
+        text = Text(root_date, width=100, height=30, wrap=WORD, )
+        btn_delete = Button(root_date, text="Очистить", command=lambda: clear(),
+                            font="times12")
+        lbl_poisk.place(x=1, y=1)
+        btn1.place(x=1, y=30)
+        btn2.place(x=250, y=30)
+        btn_poisk.place(x=1, y=100)
+        btn_delete.place(x=100, y=100)
+        text.place(x=1, y=150)
+
+        def search1():
+            first_date = ""
+            def print_sel():
+                global first_date
+                a = datetime.datetime.now().time()
+                first_date = datetime.datetime.combine(cal.selection_get(), a)
+                root.destroy()
+                lbl_first_date = Label(root_date, text=first_date.strftime("%d-%m-%Y"), background="#FFAAA8",font="times12")
+                lbl_first_date.place(x=135, y=35)
+
+            root = Tk()
+            root.title("Выбор первой даты")
+            a = datetime.datetime.today().year
+            b = datetime.datetime.today().month
+            c = datetime.datetime.today().day
+
+            cal = Calendar(root, font="Arial 14", selectmode='day', locale='Ru',
+                           cursor="hand1", year=a, month=b,day=c)
+
+            cal.pack(fill="both", expand=True)
+            Button(root, text="ok", command=print_sel).pack()
+
+        def search2():
+            second_date = ""
+            def print_sel():
+                global second_date
+                a =  datetime.datetime.now().time()
+                second_date = datetime.datetime.combine(cal.selection_get(), a)
+                root.destroy()
+                lbl_second_date = Label(root_date, text=second_date.strftime("%d-%m-%Y"), background="#FFAAA8",font="times12")
+                lbl_second_date.place(x=385, y=35)
+
+            root = Tk()
+            root.title("Выбор второй даты")
+            a = datetime.datetime.today().year
+            b = datetime.datetime.today().month
+            c = datetime.datetime.today().day
+            cal = Calendar(root, font="Arial 14", selectmode='day', locale='Ru',
+                           cursor="hand1", year=a, month=b, day=c)
+
+            cal.pack(fill="both", expand=True)
+            Button(root, text="ok", command=print_sel).pack()
+
+        def search():
+            connections.connect_coll("patient")
+            try:
+                if first_date == "" or second_date=="":
+                    messagebox.showerror("Ошибка", "Выберите период!!")
+                else:
+                    array_array = []
+                    for pat_inf in connections.coll_connector.find({"date": {"$gt": first_date, "$lt": second_date}}):
+                        for inf_search in range(len(pat_inf["service"])):
+                            array_array.append(
+                                str(pat_inf["service"][inf_search][0]) + " " + str(pat_inf["service"][inf_search][1]))
+                            info = (
+                                    "Имя врача: "
+                                    + pat_inf["doc_name"]
+                                    + " , "
+                                    + "Cпециализация: "
+                                    + pat_inf["doc_spec"]
+                                    + " , "
+                                    + "ФИО пациента: "
+                                    + pat_inf["patient_name"]
+                                    + " ,"
+                                    + "Информация о пациенте: "
+                                    + pat_inf["patient_info"]
+                                    + " , "
+                                    + "Дата посещения: "
+                                    + str(pat_inf["date"])
+                                    + " , "
+                                    + "Время посещения: "
+                                    + pat_inf["time"]
+                                    + " , "
+                                    + "Полис:"
+                                    + pat_inf["polis"]
+                                    + " , "
+                                    + "Услуги: "
+                                    + ' '.join(array_array)
+                                    + " , "
+                                    + "Комментарий врача: "
+                                    + pat_inf["comment"]
+                                    + "\n"
+                                    + "--------------------------------------------------------------------------------------------"
+                                      "----------------------------------------------------------------------------------------"
+                                    + "\n"
+                            )
+                            text.insert(1.0, info)
+                    else:
+                        messagebox.showerror("Ошибка", "Отчета за выбранную дату нет")
+            except NameError:
+                messagebox.showerror("Ошибка","Выберите дату")
+
+
+        def clear():
+            text.delete(1.0, END)
+
+    @staticmethod
     def date_entry_main():
-        first_date = ""
+        first_date_date = ""
 
         def print_sel():
-            global first_date
-            first_date = str(cal.selection_get())
-            print(first_date)
+            global first_date_date
+            first_date_date = str(cal.selection_get())
+            label_date=Label(root1,text=first_date_date, background="#FFAAA8",font="times14")
+            label_date.place(x=480,y=50)
             root.destroy()
 
         root = Tk()
@@ -335,16 +534,8 @@ class Registrator:
         b = datetime.date.today().month
         c = datetime.date.today().day
 
-        cal = Calendar(
-            root,
-            font="Arial 14",
-            selectmode="day",
-            locale="Ru",
-            cursor="hand1",
-            year=a,
-            month=b,
-            day=c,
-        )
+        cal = Calendar(root, font="Arial 14", selectmode='day', locale='Ru',
+                       cursor="hand1", year=a, month=b, day=c)
 
         cal.pack(fill="both", expand=True)
         Button(root, text="ok", command=print_sel).pack()
@@ -354,36 +545,48 @@ class Registrator:
         global doctor_main
         time_now_doc = time.strftime("%d-%m-%Y")
         doctor_main = Tk()
-        doctor_main.geometry("600x500")  # Размер окна
+        doctor_main.geometry("1000x800")
         doctor_main.title(
             "Расписание " + (str(array_doc[doctor]).lower())
-        )  # Название окна
-        doctor_main.config(background="#FFAAA8")  # Цвет фона окна
+        )
+        doctor_main.config(background="#FFAAA8")
         doctor_main.resizable(
             width=False, height=False
-        )  # Настройка,чтобы нельзя было менять размер окна
+        )
         date = Label(
             doctor_main, text=time_now_doc, background="#FFAAA8", font="times 12"
-        )  # Запись в лейбл сегодняшней даты
+        )
+        name_label = Label(
+            doctor_main,
+            text="",
+            background="#FFAAA8",
+            font="times 14",
+        )
+        name_label.place(x=1, y=780)
+        date.place(x=10, y=1)
+        btn_update_window = Button(doctor_main,text="Обновить", command=lambda: Registrator.update_window(), font="times 14")
+        btn_update_window.place(x=850,y=750)
         window_main = Registrator()
         window_main.raspis_doc_window()
-        print("fio" + str(array_zapis_fio))
-        print("worry" + str(array_zapis_worry))
-        date.place(x=100, y=1)
         doctor_main.mainloop()
+
+    @staticmethod
+    def update_window():
+        doctor_main.destroy()
+        Registrator.raspis_doc()
 
     @staticmethod
     def main_edit_price():
         global price_main
         price_main = Tk()
-        price_main.geometry("800x900")  # Размер окна
+        price_main.geometry("800x700")
         price_main.title(
             "Редактирование услуг " + (str(array_doc[doctor_]).lower())
-        )  # Название окна
-        price_main.config(background="#FFAAA8")  # Цвет фона окна
+        )
+        price_main.config(background="#FFAAA8")
         price_main.resizable(
             width=False, height=False
-        )  # Настройка,чтобы нельзя было менять размер окна
+        )
         lbl_nomen = Label(
             price_main, text="Наиминование", background="#FFAAA8", font="times 12"
         )
@@ -398,17 +601,8 @@ class Registrator:
             command=lambda: Registrator.add_nomen(),
             font="times 12",
         )
-        btn_add.place(x=250, y=250)
-        btn_save = Button(
-            price_main,
-            text="Сохранить",
-            command=lambda: Registrator.save_price(),
-            font="times 12",
-        )
-        btn_save.place(x=400, y=400)
+        btn_add.place(x=300, y=600)
         Registrator.edit_price_fucnk()
-        # lbl_number=Label(text="1"+i)
-
         price_main.mainloop()
 
     @staticmethod
@@ -417,18 +611,19 @@ class Registrator:
         id__ = -1
         doctor_ = -1
         if var.get() == 0:
-            messagebox.showinfo("Ошибка", "Выберите врача!")
+            messagebox.showerror("Ошибка", "Выберите врача!")
         else:
             while id__ < (len(array_doc_id)):
                 id__ += 1
                 doctor_ += 1
                 if var.get() == array_doc_id[id__]:
                     array_doc[doctor_]
-                    print(str(array_doc_id[id__]))
                     Registrator.main_edit_price()
+                    break
 
     @staticmethod
     def edit_price_fucnk():
+        global ax
         price_i = 0
         lbl_number_i = 1
         sql = "SELECT officium FROM price WHERE doctor_id=?"
@@ -437,6 +632,9 @@ class Registrator:
         sql1 = "SELECT price FROM price WHERE doctor_id=?"
         cursor.execute(sql1, [(str(array_doc_id[id__]))])
         abc1 = cursor.fetchall()
+        sql2 = "SELECT rowid FROM price WHERE doctor_id=?"
+        cursor.execute(sql2, [(str(array_doc_id[id__]))])
+        abc2 = cursor.fetchall()
         lbl_number_place = 0
         while price_i < len(abc):
             lbl_number = Label(
@@ -445,6 +643,7 @@ class Registrator:
                 font="times 12",
                 background="#FFAAA8",
             )
+            ax=abc2[price_i]
             lbl_number.place(x=1, y=25 + lbl_number_place)
             entry_nomen = Entry(price_main)
             entry_nomen.insert(END, abc[price_i])
@@ -455,112 +654,151 @@ class Registrator:
             btn_delete = Button(
                 price_main,
                 text="Удалить",
-                command=lambda: Registrator.delete_price(),
+                command=lambda ax=ax: Registrator.delete_price(ax),
                 font="times 11",
             )
             btn_delete.place(x=550, y=21 + lbl_number_place)
             lbl_number_i += 1
             lbl_number_place += 35
-            print("1")
             price_i += 1
 
     @staticmethod
-    def delete_price():
-        pass
+    def delete_price(klo):
+        answer = messagebox.askyesno(title="Вопрос", message="Точно хотите удалить?")
+        if answer == True:
+            cursor.execute('''DELETE FROM price WHERE rowid = ?''', (klo))
+            connection_SQL.commit()
+            messagebox.showinfo("Успешно", "Услуга удалена!")
+            price_main.destroy()
+            Registrator.main_edit_price()
 
-    @staticmethod
-    def save_price():
-        pass
+
 
     @staticmethod
     def add_nomen():
-        params = ("1", "safasf", "рубашка", "300р")
-        # Вставляем данные в таблицу
-        cursor.execute("INSERT INTO price VALUES (?,?,?,?)", params)
-        connection_SQL.commit()
-        print("ok")
+        global entry_nome_add,entry_price_add,add_nomen_main
+        add_nomen_main = Tk()
+        add_nomen_main.geometry("400x250")
+        add_nomen_main.title(
+            "Добавление услуги")
+        lbl_nomen=Label(add_nomen_main, text="Введите услугу", font="times14", background="#FFAAA8")
+        lbl_price=Label(add_nomen_main, text="Введите цену", font="times14", background="#FFAAA8")
+        entry_nome_add=Entry(add_nomen_main, )
+        entry_price_add=Entry(add_nomen_main, )
+        btn_add_db=Button(add_nomen_main,text="Добавить услугу",command=lambda:Registrator.add_to_db(),font="times12")
+        btn_add_db.place(x=200,y=150)
+        lbl_nomen.place(x=1, y=1)
+        entry_nome_add.place(x=150,y=1)
+        lbl_price.place(x=1, y=50)
+        entry_price_add.place(x=150, y=50)
+        add_nomen_main.config(background="#FFAAA8")
+        price_main.resizable(
+            width=False, height=False
+        )
+        add_nomen_main.mainloop()
+
+    @staticmethod
+    def add_to_db():
+        if str(entry_nome_add.get()) == "" or str(entry_price_add.get()) == "":
+            messagebox.showerror("Ошибка","Заполните все поля")
+        else:
+            params=(str(array_doc_id[id__]),"doctor_name",str(entry_nome_add.get()),str(entry_price_add.get()))
+            cursor.execute("INSERT INTO price VALUES (?,?,?,?)", params)
+            connection_SQL.commit()
+            answer = messagebox.askyesno(title="Вопрос", message="Хотите добавить еще?")
+            if answer == True:
+                add_nomen_main.destroy()
+                Registrator.add_nomen()
+            else:
+                add_nomen_main.destroy()
+                price_main.destroy()
+                Registrator.main_edit_price()
 
     @staticmethod
     def patient_journal():
         global polis_entr, text_journal
-        root_info = Tk()  # Создание окна
-        root_info.geometry("825x600")  # Размер окна
-        root_info.title("Журал пациентов")  # Название окна
-        root_info.config(background="#FFAAA8")  # Цвет фона окна
+        root_info = Tk()
+        root_info.geometry("925x650")
+        root_info.title("Журал пациентов")
+        root_info.config(background="#FFAAA8")
         root_info.resizable(
             width=False, height=False
-        )  # Настройка,чтобы нельзя было менять размер окна
+        )
         lbl_polis = Label(
-            root_info, text="Введите номер полиса (16 цифр)", background="#FFAAA8"
-        )  # Лейбл
+            root_info, text="Введите номер полиса (16 цифр)", background="#FFAAA8", font="times12"
+        )
         polis_entr = Entry(root_info, width=40)  # Поле ввода полиса
         btn_polis = Button(
             root_info,
             text="Найти",
             command=lambda: Registrator.patient_journal_funk(),
-            background="#FFAAA8",
-        )  # Кнопка поиска пациентов по полису
+            background="#FFAAA8",font="times12"
+        )
         text_journal = Text(
-            root_info, width=100, height=30, wrap=WORD
-        )  # Текстовой поле для вывода информации
+            root_info, width=100, height=30, wrap=WORD,font="times10"
+        )
         btn_delete = Button(
             root_info,
             text="Очистить",
             command=lambda: Registrator.patient_journal_clear(),
-            background="#FFAAA8",
-        )  # Кнопка для оичстки текстового поля
-        # Расстановка элементов на форме
-        lbl_polis.place(x=20, y=5)
-        polis_entr.place(x=1, y=40)
-        btn_polis.place(x=1, y=60)
-        btn_delete.place(x=50, y=60)
+            background="#FFAAA8",font="times12"
+        )
+        lbl_polis.place(x=1, y=5)
+        polis_entr.place(x=1, y=35)
+        btn_polis.place(x=1, y=55)
+        btn_delete.place(x=70, y=55)
         text_journal.place(x=1, y=90)
         root_info.mainloop()
 
     @staticmethod
     def patient_journal_funk():
         connections.connect_coll("patient")
-        pol = polis_entr.get()  # Запись в переменную текста из поля ввода
-        # Поиск совпадения в БД по введенном полису
-        for pat_inf in connections.connect_coll.find({"polis": pol}):
-            # Запись в переменную
-            info = (
-                "Имя врача:"
-                + pat_inf["doc_name"]
-                + " ,"
-                + "Cпециализация:"
-                + pat_inf["doc_spec"]
-                + " ,"
-                + "ФИО пацента:"
-                + pat_inf["patient_name"]
-                + " ,"
-                + "Информация о пациенте:"
-                + pat_inf["patient_info"]
-                + " ,"
-                + "Дата посещения:"
-                + str(pat_inf["date"])
-                + " ,"
-                + "Время посещения:"
-                + pat_inf["time"]
-                + " ,"
-                + "Полис:"
-                + pat_inf["polis"]
-                + " ,"
-                + "Услуги:"
-                + pat_inf["service"]
-                + " ,"
-                + "Комментарий врача:"
-                + pat_inf["comment"]
-                + "\n"
-                + "---------------------------------------------------------------------------------------------------"
-                + "\n"
-            )
-            text_journal.insert(1.0, info)  # Вывод информации в текстовое поле
+        if polis_entr.get() == "":
+            messagebox.showerror("Ошибка","Зполните поле полиса!")
+        else:
+            pol = polis_entr.get()
+            array_array=[]
+            for pat_inf in connections.coll_connector.find({"polis": pol}):
+                for inf in range (len(pat_inf["service"])):
+                    array_array.append(str(pat_inf["service"][inf][0])+" "+str(pat_inf["service"][inf][1]))
+                info = (
+                        "Имя врача: "
+                        + pat_inf["doc_name"]
+                        + " , "
+                        + "Cпециализация: "
+                        + pat_inf["doc_spec"]
+                        + " , "
+                        + "ФИО пациента: "
+                        + pat_inf["patient_name"]
+                        + " ,"
+                        + "Информация о пациенте: "
+                        + pat_inf["patient_info"]
+                        + " , "
+                        + "Дата посещения: "
+                        + str(pat_inf["date"])
+                        + " , "
+                        + "Время посещения: "
+                        + pat_inf["time"]
+                        + " , "
+                        + "Полис:"
+                        + pat_inf["polis"]
+                        + " , "
+                        + "Услуги: "
+                        + ' '.join(array_array)
+                        + " , "
+                        + "Комментарий врача: "
+                        + pat_inf["comment"]
+                        + "\n"
+                        + "--------------------------------------------------------------------------------------------"
+                          "----------------------------------------------------------------------------------------"
+                        + "\n"
+                )
+                text_journal.insert(1.0, info)
 
     @staticmethod
     def patient_journal_clear():
         polis_entr.delete(0, END)
-        text_journal.delete(1.0, END)  # Очистить поле
+        text_journal.delete(1.0, END)
 
 
 class Doctors(Registrator, Auth):
@@ -572,20 +810,20 @@ class Doctors(Registrator, Auth):
         global doctor_main_window
         time_now_doc = time.strftime("%d-%m-%Y")
         doctor_main_window = Tk()
-        doctor_main_window.geometry("1000x800")  # Размер окна
-        doctor_main_window.title("Расписание " + (specialization))  # Название окна
-        doctor_main_window.config(background="#FFAAA8")  # Цвет фона окна
+        doctor_main_window.geometry("1000x800")
+        doctor_main_window.title("Расписание " + (specialization))
+        doctor_main_window.config(background="#FFAAA8")
         doctor_main_window.resizable(
             width=False, height=False
-        )  # Настройка,чтобы нельзя было менять размер окна
+        )
         date = Label(
             doctor_main_window, text=time_now_doc, background="#FFAAA8", font="times 12"
-        )  # Запись в лейбл сегодняшней даты
+        )
         name_label = Label(
             doctor_main_window,
             text="Врач: " + name,
             background="#FFAAA8",
-            font="times 12",
+            font="times 14",
         )
         lbl_fio_pat = Label(
             doctor_main_window,
@@ -601,7 +839,7 @@ class Doctors(Registrator, Auth):
         )
         lbl_fio_pat.place(x=100, y=20)
         lbl_worry_pat.place(x=400, y=20)
-        Doctors.saffsa()
+        Doctors.search_time_doc()
         Doctors.doctors_main_functions()
         date.place(x=10, y=1)
         name_label.place(x=1, y=780)
@@ -611,7 +849,7 @@ class Doctors(Registrator, Auth):
     def doctors_main_functions():
         i = 0
         entr_place = 0
-        lp=""
+        lp = ""
         if len(array_zapis_fio_doc) == 0:
             label_dont = Label(
                 doctor_main_window,
@@ -619,7 +857,7 @@ class Doctors(Registrator, Auth):
                 background="#FFAAA8",
                 font="times 14",
             )
-            label_dont.place(x=250, y=250)
+            label_dont.place(x=400, y=250)
         else:
 
             while i < len(array_zapis_fio_doc):
@@ -629,7 +867,7 @@ class Doctors(Registrator, Auth):
                     background="#FFAAA8",
                     font="times 14",
                 )
-                time1.place(x=1, y=60 + entr_place)
+                time1.place(x=1, y=70 + entr_place)
                 lbl_name = Entry(doctor_main_window, font="times 12")
                 lbl_name.insert(END, array_zapis_fio_doc[i]["patient_name"])
                 lbl_name.configure(
@@ -648,12 +886,12 @@ class Doctors(Registrator, Auth):
                     width=35,
                 )
                 lbl_worry.place(x=350, y=60 + entr_place)
+                lp = array_zapis_fio_doc[i]["id"]
                 btn_info_pat = Button(
                     doctor_main_window,
                     text="Карточка пациента",
-                    command=lambda: Doctors.patient_card(),
+                    command=lambda lp=lp: Doctors.funktion_patient_card(lp),
                 )
-                lp = array_zapis_fio_doc[i]["id"]
                 btn_spend = Button(
                     doctor_main_window,
                     text="Выбор услуги",
@@ -665,31 +903,26 @@ class Doctors(Registrator, Auth):
                 i += 1
 
     @staticmethod
-    def saffsa():
+    def search_time_doc():
         global array_zapis_fio_doc, array_zapis_worry_doc, array_time_doc, array_polis, array_id_patient, sortedArray
         array_time_doc = []
         array_zapis_fio_doc = []
         array_zapis_worry_doc = []
         array_polis = []
         array_id_patient = []
-        end = datetime.datetime.today()  # конечное время сегодня
+        end = datetime.datetime.today()
         start = datetime.datetime.today() + datetime.timedelta(
             days=-1
-        )  # начальное время сегодня(-1 день)
-        # print(start)
+        )
         connections.connect_coll("app_reception")
         for poisk_time in connections.coll_connector.find(
             {"date": {"$gt": start, "$lt": end}, "doctor_id": id_docs}
         ):
             array_time_doc.append(poisk_time["time"])
             array_polis.append(poisk_time["polis"])
-            print(array_polis)
-        print(array_time_doc)
         sortedArray = sorted(
-            array_time_doc,
-            key=lambda x: datetime.datetime.strptime(x, '%H:%M')
+            array_time_doc, key=lambda x: datetime.datetime.strptime(x, "%H:%M")
         )
-        print(sortedArray)
         ccc = 0
         while ccc < len(sortedArray):
             for zapis in connections.coll_connector.find(
@@ -701,73 +934,99 @@ class Doctors(Registrator, Auth):
             ):
                 array_id_patient.append(zapis["id"])
                 array_zapis_fio_doc.append(zapis)
-                print(array_zapis_fio_doc)
-                # print(array_zapis_fio_doc)# ФИО
                 array_zapis_worry_doc.append(zapis["patient_info"])  # Беспокойства
             ccc += 1
 
     @staticmethod
-    def patient_card():
-        patient_card_main = Tk()  # Создание окна
-        patient_card_main.geometry("825x600")  # Размер окна
-        patient_card_main.title("Журал пациентов")  # Название окна
-        patient_card_main.config(background="#FFAAA8")  # Цвет фона окна
-        patient_card_main.resizable(
-            width=False, height=False
-        )  # Настройка,чтобы нельзя было менять размер окна
-        lbl_polis = Label(
-            patient_card_main,
-            text="Введите номер полиса (16 цифр)",
-            background="#FFAAA8",
-        )  # Лейбл
-        polis_entr = Entry(patient_card_main, width=40)  # Поле ввода полиса
-        btn_polis = Button(
-            patient_card_main,
-            text="Найти",
-            command=lambda: Registrator.patient_journal_funk(),
-            background="#FFAAA8",
-        )  # Кнопка поиска пациентов по полису
-        text_journal = Text(
-            patient_card_main, width=100, height=30, wrap=WORD
-        )  # Текстовой поле для вывода информации
-        btn_delete = Button(
-            patient_card_main,
-            text="Очистить",
-            command=lambda: Registrator.patient_journal_clear(),
-            background="#FFAAA8",
-        )  # Кнопка для оичстки текстового поля
-        # Расстановка элементов на форме
-        lbl_polis.place(x=20, y=5)
-        polis_entr.place(x=1, y=40)
-        btn_polis.place(x=1, y=60)
-        btn_delete.place(x=50, y=60)
-        text_journal.place(x=1, y=90)
-        patient_card_main.mainloop()
+    def funktion_patient_card(id_pat):
+        connections.connect_coll("app_reception")
+        for patinet_informations in connections.coll_connector.find(
+            {"id": id_pat}
+        ):
+            connections.connect_coll("patient")
+            for patinet_informations_polis1 in connections.coll_connector.find({"polis": patinet_informations["polis"]}):
+                global patient_card_main, text_journal
+                patient_card_main = Tk()
+                patient_card_main.geometry("900x600")
+                patient_card_main.title("Журал пациентов")
+                patient_card_main.config(background="#FFAAA8")
+                patient_card_main.resizable(
+                    width=False, height=False
+                )
+                lbl_patinet_card = Label(
+                    patient_card_main,
+                    text="Карточка пациента:",
+                    background="#FFAAA8",
+                    font="times 14",
+                )
+                text_journal = Text(
+                    patient_card_main, width=100, height=25, wrap=WORD, font="times 12"
+                )
+                connections.connect_coll("patient")
+                infor=[]
+                for patinet_informations_polis in connections.coll_connector.find({"polis":patinet_informations["polis"]}):
+                    for inf in range(len(patinet_informations_polis["service"])):
+                        infor.append(str(patinet_informations_polis["service"][inf][0]) + " " + str(patinet_informations_polis["service"][inf][1]))
+                    kek = patinet_informations_polis["service"]
+                    info = (
+                        "Имя врача: "
+                        + patinet_informations_polis["doc_name"]
+                        + " , "
+                        + "Cпециализация: "
+                        + patinet_informations_polis["doc_spec"]
+                        + " , "
+                        + "ФИО пациента: "
+                        + patinet_informations_polis["patient_name"]
+                        + " , "
+                        + "Информация о пациенте: "
+                        + patinet_informations_polis["patient_info"]
+                        + " , "
+                        + "Дата посещения: "
+                        + patinet_informations_polis["date"].strftime("%d-%m-%Y")
+                        + " , "
+                        + "Время посещения: "
+                        + patinet_informations_polis["time"]
+                        + " , "
+                        + "Полис: "
+                        + patinet_informations_polis["polis"]
+                        + " , "
+                        + "Услуги: "
+                        + ' '.join(infor)
+                        + " , "
+                        + "Комментарий врача: "
+                        + patinet_informations_polis["comment"]
+                        + "\n"
+                        + "--------------------------------------------------------------------------------------------------------------------------------"
+                        + "\n"
+                    )
+                    text_journal.insert(1.0, info)
+                    text_journal.place(x=1, y=50)
+                    lbl_patinet_card.place(x=1, y=1)
+                break
+            else:
+                messagebox.showerror("Ошибка", "У пациента нет карточки!")
 
     @staticmethod
     def spend(id_button):
-        global list_cb, abc, array_provesti, search_patient
+        global list_cb, abc,abc1, array_provesti,array_provesti1, search_patient, entry_com, spend_main_window
         array_provesti = []
         doctor_main_window.destroy()
         spend_main_window = Tk()
-        spend_main_window.geometry("825x600")  # Размер окна
-        spend_main_window.title("Записи услуг")  # Название окна
-        spend_main_window.config(background="#FFAAA8")  # Цвет фона окна
+        spend_main_window.geometry("825x600")
+        spend_main_window.title("Записи услуг")
+        spend_main_window.config(background="#FFAAA8")
         spend_main_window.resizable(
             width=False, height=False
-        )  # Настройка,чтобы нельзя было менять размер окна
-        cvar1 = BooleanVar(value=0)
+        )
         pr = 0
         connections.connect_coll("app_reception")
-        print(id_button)
         for search_patient in connections.coll_connector.find({"id": id_button}):
             search_patient
-            sql = "SELECT officium,price FROM price WHERE doctor_id=?"
-            cursor.execute(sql, [(str(search_patient["doctor_id"]))])
+            sql_officium = "SELECT officium,price FROM price WHERE doctor_id=?"
+            cursor.execute(sql_officium, [(str(search_patient["doctor_id"]))])
             abc = cursor.fetchall()
         plus = 0
         list_cb = []
-        kek = ""
         for pr in range(len(abc)):
             list_cb.append(IntVar())
             list_cb[-1].set(0)
@@ -778,40 +1037,85 @@ class Doctors(Registrator, Auth):
                 font="times 12",
                 command=lambda pr=pr: Doctors.provesti_pat(pr),
                 onvalue=1,
-                offvalue=0
+                offvalue=0,
             )
-            c1.place(x=1,y=30+plus)
+            c1.place(x=1, y=30 + plus)
             plus += 30
-        btn_ok = Button(spend_main_window, text="Провести", command=lambda: Doctors.spend_trans(),font="times 14")
-        btn_ok.place(x=1,y=140+plus)
-        lbl_com = Label(spend_main_window,text="Комметарий:", background="#FFAAA8", font="times 14")
-        lbl_com.place(x=1,y=60+plus)
-        entry_com = Entry(spend_main_window)
+        btn_ok = Button(
+            spend_main_window,
+            text="Провести",
+            command=lambda: Doctors.spend_trans(),
+            font="times 14",
+        )
+        btn_ok.place(x=1, y=250 + plus)
+        lbl_com = Label(
+            spend_main_window, text="Комметарий:", background="#FFAAA8", font="times 14"
+        )
+        btn_end = Button(
+            spend_main_window,
+            text="Назад",
+            command=lambda: Doctors.back(),
+            font="times 14",
+        )
+        btn_end.place(x=500, y=500)
+        lbl_com.place(x=1, y=60 + plus)
+        entry_com = Text(spend_main_window, width=50, height=5, wrap=WORD)
         entry_com.place(x=1, y=100 + plus)
-        lbl_price_nomen = Label(spend_main_window, text="Выбор услуги:", background="#FFAAA8", font="times 14")
+        lbl_price_nomen = Label(
+            spend_main_window,
+            text="Выбор услуги:",
+            background="#FFAAA8",
+            font="times 14",
+        )
         lbl_price_nomen.place(x=1, y=1)
-        lbl_patient_name = Label(spend_main_window, text="Пациент:"+search_patient["patient_name"], background="#FFAAA8", font="times 14")
+        lbl_patient_name = Label(
+            spend_main_window,
+            text="Пациент:" + search_patient["patient_name"],
+            background="#FFAAA8",
+            font="times 14",
+        )
         lbl_patient_name.place(x=1, y=570)
         spend_main_window.mainloop()
 
+
+    @staticmethod
+    def back():
+        spend_main_window.destroy()
+        Doctors.doctors_main()
+
     @staticmethod
     def provesti_pat(pr):
-        global array_provesti
         if list_cb[pr].get() == 1:
             array_provesti.append(abc[pr])
         else:
             array_provesti.remove(abc[pr])
+
     @staticmethod
     def spend_trans():
-        connections.connect_coll("patient")
-        print(search_patient["patient_name"])
-        patient_info = {"doctor_id": search_patient["doctor_id"], "patient_name": search_patient["patient_name"],
-                         "patient_info": search_patient["patient_info"],
-                        "date": search_patient["date"], "time": search_patient["time"],
-                         "polis": search_patient["polis"], "service": array_provesti, "comment": "sddasdas",
-                         "doc_name": name, "doc_spec": specialization}
-        connections.connect_coll.insert_one(patient_info)
-        print(array_provesti)
+        conn = pymongo.MongoClient(
+            "mongodb://dron2026:55555@dron2026-shard-00-00-x59g6.mongodb.net:27017,dron2026-shard-00-01-x59g6.mongodb.net:27017,dron2026-shard-00-02-x59g6.mongodb.net:27017/test?ssl=true&replicaSet=dron2026-shard-0&authSource=admin&retryWrites=true&w=majority"
+        )
+        db = conn.polyclinic
+        coll = db.patient
+        patient_info = {
+            "patient_id": search_patient["id"],
+            "doctor_id": search_patient["doctor_id"],
+            "patient_name": search_patient["patient_name"],
+            "patient_info": search_patient["patient_info"],
+            "date": search_patient["date"],
+            "time": search_patient["time"],
+            "polis": search_patient["polis"],
+            "service": array_provesti,
+            "comment": entry_com.get(1.0, END),
+            "doc_name": name,
+            "doc_spec": specialization,
+            "id_check": "1",
+        }
+        coll.insert_one(patient_info)
+        messagebox.showinfo("Успешно", "Данные переданы в регистратуру!")
+        spend_main_window.destroy()
+        Doctors.doctors_main()
+
 
 if __name__ == "__main__":
     # Registrator.main_reg()
